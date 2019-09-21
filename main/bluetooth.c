@@ -14,6 +14,7 @@
 #include "esp_spp_api.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 #include <stdbool.h>
@@ -38,6 +39,18 @@ static long data_num = 0;
 
 static const esp_spp_sec_t sec_mask = ESP_SPP_SEC_AUTHENTICATE;
 static const esp_spp_role_t role_slave = ESP_SPP_ROLE_SLAVE;
+
+xQueueHandle reading_queue;
+
+uint32_t get_reading() {
+    uint32_t reading;
+    BaseType_t queue_receive;
+    do {
+        queue_receive = xQueueReceive(reading_queue, &reading, 10000 / portTICK_PERIOD_MS);
+    }
+    while (!queue_receive);    
+    return reading;
+}
 
 static void print_speed(void)
 {
@@ -81,6 +94,8 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t* param)
         printf("I have recieved data\n");
         printf("First byte was : %d\n", param->data_ind.data[0]);
         printf("Second byte was : %d\n", param->data_ind.data[1]);
+        uint32_t reading = (param->data_ind.data[1] << 8) | (param->data_ind.data[0] & 0XFF);
+        xQueueSend(reading_queue, &reading, 10000 / portTICK_PERIOD_MS);
 
 
         
@@ -170,6 +185,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t* param)
 
 void init_bluetooth(void)
 {
+    reading_queue = xQueueCreate(10, sizeof(uint32_t));
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
         ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -237,4 +253,5 @@ void init_bluetooth(void)
     esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_VARIABLE;
     esp_bt_pin_code_t pin_code;
     esp_bt_gap_set_pin(pin_type, 0, pin_code);
+    
 }

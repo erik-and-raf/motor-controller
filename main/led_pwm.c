@@ -43,7 +43,7 @@ void init_led_pwm(void)
 
 uint16_t get_percentage(uint32_t reading)
 {
-    uint16_t percentage = reading * 100 / 4095;
+    uint16_t percentage = reading * 2;
     printf("percentage: %d\n", percentage);
     return percentage;
 }
