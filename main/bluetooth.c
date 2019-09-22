@@ -42,27 +42,14 @@ static const esp_spp_role_t role_slave = ESP_SPP_ROLE_SLAVE;
 
 xQueueHandle reading_queue;
 
-uint32_t get_reading() {
-    uint32_t reading;
+uint16_t get_reading() {
+    uint16_t reading;
     BaseType_t queue_receive;
     do {
         queue_receive = xQueueReceive(reading_queue, &reading, 10000 / portTICK_PERIOD_MS);
     }
     while (!queue_receive);    
     return reading;
-}
-
-static void print_speed(void)
-{
-    float time_old_s = time_old.tv_sec + time_old.tv_usec / 1000000.0;
-    float time_new_s = time_new.tv_sec + time_new.tv_usec / 1000000.0;
-    float time_interval = time_new_s - time_old_s;
-    float speed = data_num * 8 / time_interval / 1000.0;
-    ESP_LOGI(SPP_TAG, "speed(%fs ~ %fs): %f kbit/s", time_old_s, time_new_s,
-             speed);
-    data_num = 0;
-    time_old.tv_sec = time_new.tv_sec;
-    time_old.tv_usec = time_new.tv_usec;
 }
 
 static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t* param)

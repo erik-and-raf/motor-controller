@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "driver/ledc.h"
 #include "esp_err.h"
+#include <math.h>
 
 #define LEDC_HS_TIMER LEDC_TIMER_0
 #define LEDC_HS_MODE LEDC_HIGH_SPEED_MODE
@@ -16,12 +17,13 @@
 #define LEDC_TEST_DUTY (4000)
 #define LEDC_TEST_FADE_TIME (3000)
 
+// Change get_ratio function if this is changed to less than 12 bits
+#define DUTY_RESOLUTION LEDC_TIMER_13_BIT
+
 void init_led_pwm(void)
 {
-    int ch;
-
     ledc_timer_config_t ledc_timer = {
-        .duty_resolution = LEDC_TIMER_13_BIT, // resolution of PWM duty
+        .duty_resolution = DUTY_RESOLUTION, // resolution of PWM duty
         .freq_hz = 1000,                      // frequency of PWM signal
         .speed_mode = LEDC_HS_MODE,           // timer mode
         .timer_num = LEDC_HS_TIMER,           // timer index
@@ -41,11 +43,28 @@ void init_led_pwm(void)
     ledc_channel_config(&ledc_channel);
 }
 
-uint16_t get_percentage(uint32_t reading)
+int power(int base, int exp) {
+    if (exp == 0)
+        return 1;
+    else if (exp % 2)
+        return base * power(base, exp - 1);
+    else {
+        int temp = power(base, exp / 2);
+        return temp * temp;
+    }
+}
+
+uint16_t get_ratio() {
+    int16_t ratio = (power(2, DUTY_RESOLUTION) - 1) / 4095;
+    return ratio;
+}
+
+uint16_t get_duty_cycle(uint16_t reading, uint16_t ratio)
 {
-    uint16_t percentage = reading * 2;
-    printf("percentage: %d\n", percentage);
-    return percentage;
+    int16_t duty_cycle = reading * ratio;
+    printf("Ratio: %d\n", ratio);
+    printf("Duty cycle: %d\n", duty_cycle);
+    return duty_cycle;
 }
 
 void set_duty_cycle(u_int32_t duty_cycle)

@@ -11,10 +11,12 @@
 
 void read_joystick(void* ptr)
 {
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    uint16_t ratio = get_ratio();
+    
     while (1) {
-        uint32_t reading = get_reading();
-        uint16_t duty_cycle = get_percentage(reading);
+        uint16_t reading = get_reading();
+        
+        uint16_t duty_cycle = get_duty_cycle(reading, ratio);
         set_duty_cycle(duty_cycle);
     }
 }

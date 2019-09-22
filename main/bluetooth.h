@@ -1,3 +1,3 @@
 #include <stdint.h>
 void init_bluetooth();
-uint32_t get_reading();
+uint16_t get_reading();
